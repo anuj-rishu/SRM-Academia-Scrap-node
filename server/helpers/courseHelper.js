@@ -41,11 +41,10 @@ class CourseFetcher {
 
   getUrl() {
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth(); 
+    const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
 
     let academicYearStart, academicYearEnd;
-
     if (currentMonth >= 7 && currentMonth <= 11) {
       academicYearStart = currentYear - 1;
       academicYearEnd = currentYear;
@@ -53,50 +52,35 @@ class CourseFetcher {
       academicYearStart = currentYear - 2;
       academicYearEnd = currentYear - 1;
     }
-
-
     return `https://academia.srmist.edu.in/srm_university/academia-academic-services/page/My_Time_Table_${academicYearStart}_${
       academicYearEnd % 100
     }`;
   }
 
   async getHTML() {
-    try {
-      const response = await axios({
-        method: "GET",
-        url: this.getUrl(),
-        headers: {
-          accept: "*/*",
-          "accept-language": "en-US,en;q=0.9",
-          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "same-origin",
-          "x-requested-with": "XMLHttpRequest",
-          cookie: extractCookies(this.cookie),
-          Referer: "https://academia.srmist.edu.in/",
-          "Referrer-Policy": "strict-origin-when-cross-origin",
-          "Cache-Control": "private, max-age=120, must-revalidate",
-        },
-      });
+    const response = await axios({
+      method: "GET",
+      url: this.getUrl(),
+      headers: {
+        accept: "*/*",
+        "accept-language": "en-US,en;q=0.9",
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "x-requested-with": "XMLHttpRequest",
+        cookie: extractCookies(this.cookie),
+        Referer: "https://academia.srmist.edu.in/",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Cache-Control": "private, max-age=120, must-revalidate",
+      },
+    });
 
-      const data = response.data;
-      const parts = data.split(".sanitize('");
-
-      if (parts.length < 2) {
-        throw new Error("courses - invalid response format");
-      }
-
-      const htmlHex = parts[1].split("')")[0];
-      return convertHexToHTML(htmlHex);
-    } catch (error) {
-      console.error("Error fetching courses HTML:", error);
-      throw error;
-    }
-  }
-
-  async getPage() {
-    return this.getHTML();
+    const data = response.data;
+    const parts = data.split(".sanitize('");
+    if (parts.length < 2) throw new Error("courses - invalid response format");
+    const htmlHex = parts[1].split("')")[0];
+    return convertHexToHTML(htmlHex);
   }
 
   async getCourses() {
@@ -112,85 +96,58 @@ class CourseFetcher {
   }
 
   scrapeCourses(html) {
-    try {
-    
-      const regNumberMatch = html.match(/RA2\d{12}/);
-      const regNumber = regNumberMatch ? regNumberMatch[0] : "";
+    const regNumberMatch = html.match(/RA2\d{12}/);
+    const regNumber = regNumberMatch ? regNumberMatch[0] : "";
 
+    let courseTableHtml = "";
+    const tableParts = html.split(
+      '<table cellspacing="1" cellpadding="1" border="1" align="center" style="width:900px!important;" class="course_tbl">'
+    );
+    if (tableParts.length > 1) {
+      courseTableHtml = tableParts[1].split("</table>")[0];
+      courseTableHtml = "<table>" + courseTableHtml + "</table>";
+    } else {
+      return new CourseResponse(regNumber, [], 200);
+    }
 
-      let courseTableHtml = "";
-      const tableParts = html.split(
-        '<table cellspacing="1" cellpadding="1" border="1" align="center" style="width:900px!important;" class="course_tbl">'
-      );
-      if (tableParts.length > 1) {
-        courseTableHtml = tableParts[1].split("</table>")[0];
-        courseTableHtml = "<table>" + courseTableHtml + "</table>";
-      } else {
-        return new CourseResponse(regNumber, [], 200);
+    const $ = cheerio.load(courseTableHtml);
+    const courses = [];
+
+    $("tr").each((index, row) => {
+      if (index === 0) return;
+      const cells = $(row).find("td");
+      if (cells.length < 11) return;
+
+      // Cache cell values for faster access
+      const cellVals = [];
+      for (let i = 0; i < 11; i++) {
+        cellVals[i] = $(cells[i]).text().trim();
       }
 
-      const $ = cheerio.load(courseTableHtml);
-      const courses = [];
+      let slot = cellVals[8].replace(/-$/, "");
+      let room = cellVals[9] || "N/A";
+      if (room !== "N/A") room = room.charAt(0).toUpperCase() + room.slice(1);
 
-      $("tr").each((index, row) => {
-        if (index === 0) return;
+      const course = new Course();
+      course.code = cellVals[1];
+      course.title = cellVals[2].split(" \\u2013")[0];
+      course.credit = cellVals[3] || "N/A";
+      course.category = cellVals[4];
+      course.courseCategory = cellVals[5];
+      course.type = cellVals[6] || "N/A";
+      course.slotType = slot.includes("P") ? "Practical" : "Theory";
+      course.faculty = cellVals[7] || "N/A";
+      course.slot = slot;
+      course.room = room;
+      course.academicYear = cellVals[10];
 
-        const cells = $(row).find("td");
-        if (cells.length < 11) return;
+      courses.push(course);
+    });
 
-        const getText = (idx) => $(cells.eq(idx)).text().trim();
-
-        const code = getText(1);
-        const title = getText(2);
-        const credit = getText(3) || "N/A";
-        const category = getText(4);
-        const courseCategory = getText(5);
-        const courseType = getText(6) || "N/A";
-        const faculty = getText(7) || "N/A";
-        let slot = getText(8);
-        let room = getText(9) || "N/A";
-        const academicYear = getText(10);
-
-        slot = slot.replace(/-$/, "");
-
-        if (room !== "N/A") {
-          room = room.charAt(0).toUpperCase() + room.slice(1);
-        }
-
-  
-        const slotType = slot.includes("P") ? "Practical" : "Theory";
-
-        const course = new Course();
-        course.code = code;
-        course.title = title.split(" \\u2013")[0];
-        course.credit = credit;
-        course.category = category;
-        course.courseCategory = courseCategory;
-        course.type = courseType;
-        course.slotType = slotType;
-        course.faculty = faculty;
-        course.slot = slot;
-        course.room = room;
-        course.academicYear = academicYear;
-
-        courses.push(course);
-      });
-
-      const response = new CourseResponse();
-      response.regNumber = regNumber;
-      response.courses = courses;
-      return response;
-    } catch (error) {
-      console.error("Error scraping courses:", error);
-      const response = new CourseResponse();
-      response.status = 500;
-      response.error = error.message;
-      return response;
-    }
-  }
-
-  getSlotType(slot) {
-    return slot.includes("P") ? "Practical" : "Theory";
+    const response = new CourseResponse();
+    response.regNumber = regNumber;
+    response.courses = courses;
+    return response;
   }
 }
 

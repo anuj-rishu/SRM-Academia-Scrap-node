@@ -23,72 +23,22 @@ const slotTimes = [
 const batch1 = {
   batch: "1",
   slots: [
-    {
-      day: 1,
-      dayOrder: "Day 1",
-      slots: ["A", "A", "F", "F", "G", "P6", "P7", "P8", "P9", "P10"],
-      times: slotTimes,
-    },
-    {
-      day: 2,
-      dayOrder: "Day 2",
-      slots: ["P11", "P12", "P13", "P14", "P15", "B", "B", "G", "G", "A"],
-      times: slotTimes,
-    },
-    {
-      day: 3,
-      dayOrder: "Day 3",
-      slots: ["C", "C", "A", "D", "B", "P26", "P27", "P28", "P29", "P30"],
-      times: slotTimes,
-    },
-    {
-      day: 4,
-      dayOrder: "Day 4",
-      slots: ["P31", "P32", "P33", "P34", "P35", "D", "D", "B", "E", "C"],
-      times: slotTimes,
-    },
-    {
-      day: 5,
-      dayOrder: "Day 5",
-      slots: ["E", "E", "C", "F", "D", "P46", "P47", "P48", "P49", "P50"],
-      times: slotTimes,
-    },
+    { day: 1, dayOrder: "Day 1", slots: ["A", "A", "F", "F", "G", "P6", "P7", "P8", "P9", "P10"], times: slotTimes },
+    { day: 2, dayOrder: "Day 2", slots: ["P11", "P12", "P13", "P14", "P15", "B", "B", "G", "G", "A"], times: slotTimes },
+    { day: 3, dayOrder: "Day 3", slots: ["C", "C", "A", "D", "B", "P26", "P27", "P28", "P29", "P30"], times: slotTimes },
+    { day: 4, dayOrder: "Day 4", slots: ["P31", "P32", "P33", "P34", "P35", "D", "D", "B", "E", "C"], times: slotTimes },
+    { day: 5, dayOrder: "Day 5", slots: ["E", "E", "C", "F", "D", "P46", "P47", "P48", "P49", "P50"], times: slotTimes },
   ],
 };
 
 const batch2 = {
   batch: "2",
   slots: [
-    {
-      day: 1,
-      dayOrder: "Day 1",
-      slots: ["P1", "P2", "P3", "P4", "P5", "A", "A", "F", "F", "G"],
-      times: slotTimes,
-    },
-    {
-      day: 2,
-      dayOrder: "Day 2",
-      slots: ["B", "B", "G", "G", "A", "P16", "P17", "P18", "P19", "P20"],
-      times: slotTimes,
-    },
-    {
-      day: 3,
-      dayOrder: "Day 3",
-      slots: ["P21", "P22", "P23", "P24", "P25", "C", "C", "A", "D", "B"],
-      times: slotTimes,
-    },
-    {
-      day: 4,
-      dayOrder: "Day 4",
-      slots: ["D", "D", "B", "E", "C", "P36", "P37", "P38", "P39", "P40"],
-      times: slotTimes,
-    },
-    {
-      day: 5,
-      dayOrder: "Day 5",
-      slots: ["P41", "P42", "P43", "P44", "P45", "E", "E", "C", "F", "D"],
-      times: slotTimes,
-    },
+    { day: 1, dayOrder: "Day 1", slots: ["P1", "P2", "P3", "P4", "P5", "A", "A", "F", "F", "G"], times: slotTimes },
+    { day: 2, dayOrder: "Day 2", slots: ["B", "B", "G", "G", "A", "P16", "P17", "P18", "P19", "P20"], times: slotTimes },
+    { day: 3, dayOrder: "Day 3", slots: ["P21", "P22", "P23", "P24", "P25", "C", "C", "A", "D", "B"], times: slotTimes },
+    { day: 4, dayOrder: "Day 4", slots: ["D", "D", "B", "E", "C", "P36", "P37", "P38", "P39", "P40"], times: slotTimes },
+    { day: 5, dayOrder: "Day 5", slots: ["P41", "P42", "P43", "P44", "P45", "E", "E", "C", "F", "D"], times: slotTimes },
   ],
 };
 
@@ -107,16 +57,9 @@ class Timetable {
       }
 
       let selectedBatch;
-      switch (parseInt(batchNumber)) {
-        case 1:
-          selectedBatch = batch1;
-          break;
-        case 2:
-          selectedBatch = batch2;
-          break;
-        default:
-          throw new Error(`Invalid batch number: ${batchNumber}`);
-      }
+      if (batchNumber == 1) selectedBatch = batch1;
+      else if (batchNumber == 2) selectedBatch = batch2;
+      else throw new Error(`Invalid batch number: ${batchNumber}`);
 
       const mappedSchedule = this.mapSlotsToSubjects(
         selectedBatch,
@@ -129,18 +72,14 @@ class Timetable {
         schedule: mappedSchedule,
       };
     } catch (error) {
-      console.error("Error in getTimetable:", error);
       throw error;
     }
   }
 
   convertTo12Hour(time24) {
     const [hours, minutes] = time24.split(":").map(Number);
-
     const period = hours >= 12 ? "PM" : "AM";
-
     const hours12 = hours % 12 || 12;
-
     return `${hours12}:${minutes.toString().padStart(2, "0")} ${period}`;
   }
 
@@ -149,7 +88,7 @@ class Timetable {
   }
 
   mapSlotsToSubjects(batch, subjects) {
-    const slotMapping = {};
+    const slotMapping = Object.create(null);
 
     for (const subject of subjects) {
       let slots = [];
@@ -173,9 +112,7 @@ class Timetable {
           slot: slot,
         };
 
-        if (!slotMapping[slot]) {
-          slotMapping[slot] = [];
-        }
+        if (!slotMapping[slot]) slotMapping[slot] = [];
         slotMapping[slot].push(tableSlot);
       }
     }
@@ -187,18 +124,16 @@ class Timetable {
 
       for (let i = 0; i < day.slots.length; i++) {
         const slotCode = day.slots[i];
-
-        if (!slotMapping[slotCode]) continue;
+        const subjectsInSlot = slotMapping[slotCode];
+        if (!subjectsInSlot) continue;
 
         const timeRange = day.times[i];
         const [startTime24, endTime24] = timeRange.split("-");
         const startTime = this.convertTo12Hour(startTime24);
         const endTime = this.convertTo12Hour(endTime24);
 
-        const subjectsInSlot = slotMapping[slotCode];
-
         if (subjectsInSlot.length > 1) {
-          const mergedClass = {
+          dayClasses.push({
             code: this.uniqueCodes(subjectsInSlot).join("/"),
             name: this.uniqueNames(subjectsInSlot).join("/"),
             online: subjectsInSlot[0].online,
@@ -208,16 +143,14 @@ class Timetable {
             startTime,
             endTime,
             timeSlot: `${startTime}-${endTime}`,
-          };
-          dayClasses.push(mergedClass);
+          });
         } else {
-          const classEntry = {
+          dayClasses.push({
             ...subjectsInSlot[0],
             startTime,
             endTime,
             timeSlot: `${startTime}-${endTime}`,
-          };
-          dayClasses.push(classEntry);
+          });
         }
       }
 
@@ -234,11 +167,11 @@ class Timetable {
   }
 
   uniqueCodes(slots) {
-    const seen = {};
+    const set = new Set();
     const result = [];
     for (const slot of slots) {
-      if (!seen[slot.code]) {
-        seen[slot.code] = true;
+      if (!set.has(slot.code)) {
+        set.add(slot.code);
         result.push(slot.code);
       }
     }
@@ -246,11 +179,11 @@ class Timetable {
   }
 
   uniqueNames(slots) {
-    const seen = {};
+    const set = new Set();
     const result = [];
     for (const slot of slots) {
-      if (!seen[slot.name]) {
-        seen[slot.name] = true;
+      if (!set.has(slot.name)) {
+        set.add(slot.name);
         result.push(slot.name);
       }
     }
@@ -258,11 +191,11 @@ class Timetable {
   }
 
   uniqueRooms(slots) {
-    const seen = {};
+    const set = new Set();
     const result = [];
     for (const slot of slots) {
-      if (!seen[slot.roomNo]) {
-        seen[slot.roomNo] = true;
+      if (!set.has(slot.roomNo)) {
+        set.add(slot.roomNo);
         result.push(slot.roomNo);
       }
     }

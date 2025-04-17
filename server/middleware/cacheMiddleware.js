@@ -13,7 +13,6 @@ const cacheMiddleware = (req, res, next) => {
   const originalJson = res.json;
   res.json = function (body) {
     cache.set(key, body);
-
     setTimeout(() => cache.delete(key), 2 * 60 * 1000);
     return originalJson.call(this, body);
   };

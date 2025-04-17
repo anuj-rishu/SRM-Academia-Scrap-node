@@ -11,66 +11,20 @@ const { handleError } = require("../utils/errorHandler");
 
 const router = express.Router();
 
-router.get(
-  "/upcoming-classes",
-  tokenMiddleware,
-  cacheMiddleware,
-  async (req, res) => {
+function routeHandler(fn) {
+  return async (req, res) => {
     try {
-      const upcomingClasses = await getUpcomingClasses(
-        req.headers["x-csrf-token"]
-      );
-      res.json(upcomingClasses);
+      const data = await fn(req.headers["x-csrf-token"]);
+      res.json(data);
     } catch (error) {
       handleError(res, error);
     }
-  }
-);
+  };
+}
 
-router.get(
-  "/today-classes",
-  tokenMiddleware,
-  cacheMiddleware,
-  async (req, res) => {
-    try {
-      const todayClasses = await getTodayClasses(req.headers["x-csrf-token"]);
-      res.json(todayClasses);
-    } catch (error) {
-      handleError(res, error);
-    }
-  }
-);
-
-router.get(
-  "/tomorrow-classes",
-  tokenMiddleware,
-  cacheMiddleware,
-  async (req, res) => {
-    try {
-      const tomorrowClasses = await getTomorrowClasses(
-        req.headers["x-csrf-token"]
-      );
-      res.json(tomorrowClasses);
-    } catch (error) {
-      handleError(res, error);
-    }
-  }
-);
-
-router.get(
-  "/day-after-tomorrow-classes",
-  tokenMiddleware,
-  cacheMiddleware,
-  async (req, res) => {
-    try {
-      const dayAfterClasses = await getDayAfterTomorrowClasses(
-        req.headers["x-csrf-token"]
-      );
-      res.json(dayAfterClasses);
-    } catch (error) {
-      handleError(res, error);
-    }
-  }
-);
+router.get("/upcoming-classes", tokenMiddleware, cacheMiddleware, routeHandler(getUpcomingClasses));
+router.get("/today-classes", tokenMiddleware, cacheMiddleware, routeHandler(getTodayClasses));
+router.get("/tomorrow-classes", tokenMiddleware, cacheMiddleware, routeHandler(getTomorrowClasses));
+router.get("/day-after-tomorrow-classes", tokenMiddleware, cacheMiddleware, routeHandler(getDayAfterTomorrowClasses));
 
 module.exports = router;

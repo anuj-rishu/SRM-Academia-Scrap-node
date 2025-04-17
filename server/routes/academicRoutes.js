@@ -11,58 +11,22 @@ const { handleError } = require('../utils/errorHandler');
 
 const router = express.Router();
 
-router.get("/courses", tokenMiddleware, cacheMiddleware, async (req, res) => {
-  try {
-    const courses = await getCourses(req.headers["x-csrf-token"]);
-    res.json(courses);
-  } catch (error) {
-    handleError(res, error);
-  }
-});
+function routeHandler(fn) {
+  return async (req, res) => {
+    try {
+      const data = await fn(req.headers["x-csrf-token"]);
+      res.json(data);
+    } catch (error) {
+      handleError(res, error);
+    }
+  };
+}
 
-router.get("/calendar", tokenMiddleware, cacheMiddleware, async (req, res) => {
-  try {
-    const calendar = await getCalendar(req.headers["x-csrf-token"]);
-    res.json(calendar);
-  } catch (error) {
-    handleError(res, error);
-  }
-});
-
-router.get("/dayorder", tokenMiddleware, cacheMiddleware, async (req, res) => {
-  try {
-    const dayOrder = await getTodayDayOrder(req.headers["x-csrf-token"]);
-    res.json(dayOrder);
-  } catch (error) {
-    handleError(res, error);
-  }
-});
-
-router.get("/marks", tokenMiddleware, cacheMiddleware, async (req, res) => {
-  try {
-    const marks = await getMarks(req.headers["x-csrf-token"]);
-    res.json(marks);
-  } catch (error) {
-    handleError(res, error);
-  }
-});
-
-router.get("/attendance", tokenMiddleware, cacheMiddleware, async (req, res) => {
-  try {
-    const attendance = await getAttendance(req.headers["x-csrf-token"]);
-    res.json(attendance);
-  } catch (error) {
-    handleError(res, error);
-  }
-});
-
-router.get("/timetable", tokenMiddleware, cacheMiddleware, async (req, res) => {
-  try {
-    const timetable = await getTimetable(req.headers["x-csrf-token"]);
-    res.json(timetable);
-  } catch (error) {
-    handleError(res, error);
-  }
-});
+router.get("/courses", tokenMiddleware, cacheMiddleware, routeHandler(getCourses));
+router.get("/calendar", tokenMiddleware, cacheMiddleware, routeHandler(getCalendar));
+router.get("/dayorder", tokenMiddleware, cacheMiddleware, routeHandler(getTodayDayOrder));
+router.get("/marks", tokenMiddleware, cacheMiddleware, routeHandler(getMarks));
+router.get("/attendance", tokenMiddleware, cacheMiddleware, routeHandler(getAttendance));
+router.get("/timetable", tokenMiddleware, cacheMiddleware, routeHandler(getTimetable));
 
 module.exports = router;

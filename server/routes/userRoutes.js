@@ -7,22 +7,18 @@ const { handleError } = require('../utils/errorHandler');
 
 const router = express.Router();
 
-router.get("/profile", tokenMiddleware, cacheMiddleware, async (req, res) => {
-  try {
-    const profile = await getProfile(req.headers["x-csrf-token"]);
-    res.json(profile);
-  } catch (error) {
-    handleError(res, error);
-  }
-});
+function routeHandler(fn) {
+  return async (req, res) => {
+    try {
+      const data = await fn(req.headers["x-csrf-token"]);
+      res.json(data);
+    } catch (error) {
+      handleError(res, error);
+    }
+  };
+}
 
-router.get("/user", tokenMiddleware, cacheMiddleware, async (req, res) => {
-  try {
-    const user = await getUser(req.headers["x-csrf-token"]);
-    res.json(user);
-  } catch (error) {
-    handleError(res, error);
-  }
-});
+router.get("/profile", tokenMiddleware, cacheMiddleware, routeHandler(getProfile));
+router.get("/user", tokenMiddleware, cacheMiddleware, routeHandler(getUser));
 
 module.exports = router;
