@@ -4,7 +4,7 @@ const { extractCookies } = require("../utils/extractUtils");
 
 class ProfileFetcher {
   constructor(cookie) {
-    this.cookie = cookie;
+    this.cookie = cookie
     this.baseUrl = "https://academia.srmist.edu.in";
   }
 
