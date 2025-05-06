@@ -23,22 +23,72 @@ const slotTimes = [
 const batch1 = {
   batch: "1",
   slots: [
-    { day: 1, dayOrder: "Day 1", slots: ["A", "A", "F", "F", "G", "P6", "P7", "P8", "P9", "P10"], times: slotTimes },
-    { day: 2, dayOrder: "Day 2", slots: ["P11", "P12", "P13", "P14", "P15", "B", "B", "G", "G", "A"], times: slotTimes },
-    { day: 3, dayOrder: "Day 3", slots: ["C", "C", "A", "D", "B", "P26", "P27", "P28", "P29", "P30"], times: slotTimes },
-    { day: 4, dayOrder: "Day 4", slots: ["P31", "P32", "P33", "P34", "P35", "D", "D", "B", "E", "C"], times: slotTimes },
-    { day: 5, dayOrder: "Day 5", slots: ["E", "E", "C", "F", "D", "P46", "P47", "P48", "P49", "P50"], times: slotTimes },
+    {
+      day: 1,
+      dayOrder: "Day 1",
+      slots: ["A", "A", "F", "F", "G", "P6", "P7", "P8", "P9", "P10"],
+      times: slotTimes,
+    },
+    {
+      day: 2,
+      dayOrder: "Day 2",
+      slots: ["P11", "P12", "P13", "P14", "P15", "B", "B", "G", "G", "A"],
+      times: slotTimes,
+    },
+    {
+      day: 3,
+      dayOrder: "Day 3",
+      slots: ["C", "C", "A", "D", "B", "P26", "P27", "P28", "P29", "P30"],
+      times: slotTimes,
+    },
+    {
+      day: 4,
+      dayOrder: "Day 4",
+      slots: ["P31", "P32", "P33", "P34", "P35", "D", "D", "B", "E", "C"],
+      times: slotTimes,
+    },
+    {
+      day: 5,
+      dayOrder: "Day 5",
+      slots: ["E", "E", "C", "F", "D", "P46", "P47", "P48", "P49", "P50"],
+      times: slotTimes,
+    },
   ],
 };
 
 const batch2 = {
   batch: "2",
   slots: [
-    { day: 1, dayOrder: "Day 1", slots: ["P1", "P2", "P3", "P4", "P5", "A", "A", "F", "F", "G"], times: slotTimes },
-    { day: 2, dayOrder: "Day 2", slots: ["B", "B", "G", "G", "A", "P16", "P17", "P18", "P19", "P20"], times: slotTimes },
-    { day: 3, dayOrder: "Day 3", slots: ["P21", "P22", "P23", "P24", "P25", "C", "C", "A", "D", "B"], times: slotTimes },
-    { day: 4, dayOrder: "Day 4", slots: ["D", "D", "B", "E", "C", "P36", "P37", "P38", "P39", "P40"], times: slotTimes },
-    { day: 5, dayOrder: "Day 5", slots: ["P41", "P42", "P43", "P44", "P45", "E", "E", "C", "F", "D"], times: slotTimes },
+    {
+      day: 1,
+      dayOrder: "Day 1",
+      slots: ["P1", "P2", "P3", "P4", "P5", "A", "A", "F", "F", "G"],
+      times: slotTimes,
+    },
+    {
+      day: 2,
+      dayOrder: "Day 2",
+      slots: ["B", "B", "G", "G", "A", "P16", "P17", "P18", "P19", "P20"],
+      times: slotTimes,
+    },
+    {
+      day: 3,
+      dayOrder: "Day 3",
+      slots: ["P21", "P22", "P23", "P24", "P25", "C", "C", "A", "D", "B"],
+      times: slotTimes,
+    },
+    {
+      day: 4,
+      dayOrder: "Day 4",
+      slots: ["D", "D", "B", "E", "C", "P36", "P37", "P38", "P39", "P40"],
+      times: slotTimes,
+    },
+    {
+      day: 5,
+      dayOrder: "Day 5",
+      slots: ["P41", "P42", "P43", "P44", "P45", "E", "E", "C", "F", "D"],
+      times: slotTimes,
+    },
   ],
 };
 
@@ -143,6 +193,8 @@ class Timetable {
             startTime,
             endTime,
             timeSlot: `${startTime}-${endTime}`,
+            originalStartTime24: startTime24,
+            originalEndTime24: endTime24,
           });
         } else {
           dayClasses.push({
@@ -150,20 +202,79 @@ class Timetable {
             startTime,
             endTime,
             timeSlot: `${startTime}-${endTime}`,
+            originalStartTime24: startTime24,
+            originalEndTime24: endTime24,
           });
         }
       }
 
-      if (dayClasses.length > 0) {
+      const mergedClasses = this.mergeConsecutiveClasses(dayClasses);
+
+      if (mergedClasses.length > 0) {
         schedule.push({
           day: day.day,
           dayOrder: day.dayOrder,
-          table: dayClasses,
+          table: mergedClasses,
         });
       }
     }
 
     return schedule;
+  }
+
+  mergeConsecutiveClasses(classes) {
+    if (!classes.length) return [];
+
+    const sortedClasses = [...classes].sort((a, b) => {
+      return a.originalStartTime24.localeCompare(b.originalStartTime24);
+    });
+
+    const result = [];
+    let currentClass = sortedClasses[0];
+
+    for (let i = 1; i < sortedClasses.length; i++) {
+      const nextClass = sortedClasses[i];
+
+      const [currentEndHour, currentEndMin] = currentClass.originalEndTime24
+        .split(":")
+        .map(Number);
+      const [nextStartHour, nextStartMin] = nextClass.originalStartTime24
+        .split(":")
+        .map(Number);
+
+      const currentEndMinutes = currentEndHour * 60 + currentEndMin;
+      const nextStartMinutes = nextStartHour * 60 + nextStartMin;
+      const timeDifference = nextStartMinutes - currentEndMinutes;
+
+      if (
+        currentClass.code === nextClass.code &&
+        currentClass.name === nextClass.name &&
+        currentClass.roomNo === nextClass.roomNo &&
+        timeDifference <= 5
+      ) {
+        currentClass = {
+          ...currentClass,
+          endTime: nextClass.endTime,
+          originalEndTime24: nextClass.originalEndTime24,
+          timeSlot: `${currentClass.startTime}-${nextClass.endTime}`,
+
+          slot:
+            currentClass.slot === nextClass.slot
+              ? currentClass.slot
+              : `${currentClass.slot}/${nextClass.slot}`,
+        };
+      } else {
+        result.push(currentClass);
+        currentClass = nextClass;
+      }
+    }
+
+    result.push(currentClass);
+
+    return result.map((cls) => {
+      const { originalStartTime24, originalEndTime24, ...cleanClass } = cls;
+      return cleanClass;
+    });
   }
 
   uniqueCodes(slots) {
