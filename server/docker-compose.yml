@@ -1,13 +1,86 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  api:
+  srm-app:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: srm_academia_app
     ports:
       - "9000:9000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - PORT=9000
-    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - monitoring_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - monitoring_network
+    depends_on:
+      - srm-app
+
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring_network
+
+  promtail:
+    image: grafana/promtail:2.9.3
+    container_name: promtail
+    volumes:
+      - ./logs:/var/log
+      - ./promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
+    networks:
+      - monitoring_network
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./srm-dashboard.json:/etc/grafana/provisioning/dashboards/srm-dashboard.json
+      - ./grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./grafana-dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
+    networks:
+      - monitoring_network
+    depends_on:
+      - prometheus
+      - loki
+
+networks:
+  monitoring_network:
+    driver: bridge
+
+volumes:
+  grafana_data:
