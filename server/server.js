@@ -15,10 +15,8 @@ if (process.env.DEV_MODE === "true") {
 const app = express();
 const port = process.env.PORT || 9000;
 
-// Apply logging middleware first
 app.use(loggingMiddleware);
 
-// Apply Prometheus metrics middleware early
 app.use(metricsMiddleware);
 
 app.use(bodyParser.json({ limit: "256kb" }));
