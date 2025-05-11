@@ -4,9 +4,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const compression = require("compression");
 const { limiter } = require("./middleware/rateLimiter");
-const { loggingMiddleware, logger } = require("./middleware/loggingMiddleware");
 const routes = require("./routes");
-const { register, metricsMiddleware } = require("./logging/prometheus-metrics");
 
 if (process.env.DEV_MODE === "true") {
   dotenv.config();
@@ -15,9 +13,7 @@ if (process.env.DEV_MODE === "true") {
 const app = express();
 const port = process.env.PORT || 9000;
 
-app.use(loggingMiddleware);
-
-app.use(metricsMiddleware);
+// Removed metricsMiddleware reference
 
 app.use(bodyParser.json({ limit: "256kb" }));
 
@@ -55,19 +51,12 @@ app.use(
 
 app.use(limiter);
 
-app.get("/metrics", async (req, res) => {
-  try {
-    res.set("Content-Type", register.contentType);
-    res.end(await register.metrics());
-  } catch (ex) {
-    res.status(500).end(ex.toString());
-  }
-});
+// Removed /metrics endpoint
 
 app.use("/", routes);
 
 app.use((err, req, res, next) => {
-  logger.error("Server error", {
+  console.error("Server error", {
     error: err.message,
     stack: err.stack,
     path: req.path,
@@ -82,5 +71,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, "0.0.0.0", () => {
-  logger.info(`Server running on port ${port}`);
+  console.info(`Server running on port ${port}`);
 });
