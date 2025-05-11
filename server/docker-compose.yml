@@ -46,12 +46,12 @@ services:
       - "3100:3100"
     volumes:
       - ./loki-config.yaml:/etc/loki/local-config.yaml
-      - loki_data:/data/loki
-      - loki_wal:/wal  # Added volume for WAL
+      - ./data/loki:/data/loki  # Map to a local directory for persistence
+      - ./wal:/wal  # Map a writable local directory for WAL
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - monitoring_network
-    user: "root"  # Run as root to avoid permission issues (only for testing)
+    user: "root"  # Run as root to avoid permission issues
 
   promtail:
     image: grafana/promtail:2.9.3
@@ -75,7 +75,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./data/grafana:/var/lib/grafana  # Map to a local directory for persistence
       - ./srm-dashboard.json:/etc/grafana/provisioning/dashboards/srm-dashboard.json
       - ./grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasources.yml
       - ./grafana-dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
@@ -90,7 +90,4 @@ networks:
     driver: bridge
 
 volumes:
-  grafana_data:
-  loki_data:
-  loki_wal:  # Added volume for Loki WAL
-  prometheus_data:  # Added volume for Prometheus data
+  prometheus_data:  # Named volume for Prometheus data
