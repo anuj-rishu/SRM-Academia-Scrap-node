@@ -40,18 +40,18 @@ services:
       - srm-app
 
   loki:
-    image: grafana/loki:2.9.3
-    container_name: loki
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./loki-config.yaml:/etc/loki/local-config.yaml
-      - loki_data:/data/loki
-      - loki_wal:/wal  # Added volume for WAL
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - monitoring_network
-    user: "root"  # Run as root to avoid permission issues (only for testing)
+      image: grafana/loki:2.9.3
+      container_name: loki
+      ports:
+        - "3100:3100"
+      volumes:
+        - ./loki-config.yaml:/etc/loki/local-config.yaml
+        - loki_data:/data/loki
+        - loki_wal:/data/loki/wal  # Changed from /wal to /data/loki/wal
+      command: -config.file=/etc/loki/local-config.yaml
+      networks:
+        - monitoring_network
+      user: "root"  # Run as root to avoid permission issues (only for testing)
 
   promtail:
     image: grafana/promtail:2.9.3
