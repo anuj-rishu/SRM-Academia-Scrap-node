@@ -13,8 +13,6 @@ if (process.env.DEV_MODE === "true") {
 const app = express();
 const port = process.env.PORT || 9000;
 
-// Removed metricsMiddleware reference
-
 app.use(bodyParser.json({ limit: "256kb" }));
 
 app.use(compression());
