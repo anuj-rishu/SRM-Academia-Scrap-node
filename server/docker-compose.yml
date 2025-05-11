@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: srm_academia_app
     ports:
-      - "9001:9000"
+      - "9001:9000"  # Changed to 9001 to avoid conflict with PM2
     environment:
       - NODE_ENV=development
       - PORT=9000
@@ -28,7 +28,7 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
+      - prometheus_data:/prometheus  # Added volume for persistence
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -47,11 +47,11 @@ services:
     volumes:
       - ./loki-config.yaml:/etc/loki/local-config.yaml
       - loki_data:/data/loki
-      - loki_wal:/wal
+      - loki_wal:/wal  # Added volume for WAL
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - monitoring_network
-    user: "root"
+    user: "root"  # Run as root to avoid permission issues (only for testing)
 
   promtail:
     image: grafana/promtail:2.9.3
@@ -92,5 +92,5 @@ networks:
 volumes:
   grafana_data:
   loki_data:
-  loki_wal:
-  prometheus_data:
+  loki_wal:  # Added volume for Loki WAL
+  prometheus_data:  # Added volume for Prometheus data
