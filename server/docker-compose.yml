@@ -47,10 +47,14 @@ services:
     volumes:
       - ./loki-config.yaml:/etc/loki/local-config.yaml
       - loki_data:/data/loki
+      - loki_wal:/wal  # Explicitly mount the WAL volume
     command: -config.file=/etc/loki/local-config.yaml
+    environment:
+      - JAEGER_AGENT_HOST=tempo
+      - LOKI_CONFIG=/etc/loki/local-config.yaml
     networks:
       - monitoring_network
-    user: "root"  # Run as root to avoid permission issues (only for testing)
+    user: "root"  # Run as root to avoid permission issues
 
   promtail:
     image: grafana/promtail:2.9.3
@@ -91,4 +95,5 @@ networks:
 volumes:
   grafana_data:
   loki_data:
-  prometheus_data:  # Added volume for Prometheus data
+  loki_wal:  # Added dedicated volume for Loki WAL
+  prometheus_data:

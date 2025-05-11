@@ -16,7 +16,7 @@ ingester:
   chunk_retain_period: 30s
   wal:  # Add WAL configuration
     enabled: true
-    dir: "/data/loki/wal"
+    dir: "/wal"  # Changed from "/data/loki/wal" to "/wal"
 
 schema_config:
   configs:
