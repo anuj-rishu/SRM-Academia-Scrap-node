@@ -7,6 +7,7 @@ const { getTodayDayOrder } = require('../handlers/dayOrderHandler');
 const { getMarks } = require('../handlers/marksHandler');
 const { getAttendance } = require('../handlers/attendanceHandler');
 const { getTimetable } = require('../handlers/timetableHandler');
+const { getFeedbackForm } = require('../handlers/feedbackHandler');
 const { handleError } = require('../utils/errorHandler');
 
 const router = express.Router();
@@ -28,5 +29,6 @@ router.get("/dayorder", tokenMiddleware, cacheMiddleware, routeHandler(getTodayD
 router.get("/marks", tokenMiddleware, cacheMiddleware, routeHandler(getMarks));
 router.get("/attendance", tokenMiddleware, cacheMiddleware, routeHandler(getAttendance));
 router.get("/timetable", tokenMiddleware, cacheMiddleware, routeHandler(getTimetable));
+router.get("/feedback", tokenMiddleware, cacheMiddleware, routeHandler(getFeedbackForm));
 
 module.exports = router;
